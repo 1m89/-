@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="一个温暖治愈的多关卡猜数字小游戏">
+    <title>森林精灵的数字冒险</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Fredoka', 'Noto Serif SC', sans-serif;
+            background: linear-gradient(135deg, #f5e6d3 0%, #e8d4c4 50%, #dcc4b0 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 背景装饰 */
+        .bg-decoration {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .leaf {
+            position: absolute;
+            opacity: 0.15;
+            font-size: 3rem;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        .leaf:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
+        .leaf:nth-child(2) { left: 80%; top: 30%; animation-delay: 1s; }
+        .leaf:nth-child(3) { left: 15%; top: 70%; animation-delay: 2s; }
+        .leaf:nth-child(4) { left: 85%; top: 60%; animation-delay: 1.5s; }
+        .leaf:nth-child(5) { left: 50%; top: 15%; animation-delay: 0.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(250,248,245,0.95) 100%);
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6);
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.4);
+            animation: slideIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 关卡选择屏幕 ===== */
+        #levelSelect {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .level-title {
+            color: #6b4423;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .level-description {
+            color: #a0826d;
+            font-size: 0.95rem;
+            margin-bottom: 35px;
+            line-height: 1.6;
+        }
+
+        .sprite-container {
+            margin-bottom: 25px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sprite {
+            font-size: 80px;
+            animation: sprite-bounce 2s infinite ease-in-out;
+        }
+
+        @keyframes sprite-bounce {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .levels-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .level-btn {
+            width: 100%;
+            padding: 18px;
+            border: 2px solid transparent;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: white;
+        }
+
+        .level-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .level-btn.easy {
+            background: linear-gradient(135deg, #a8d5ba 0%, #8ec9ae 100%);
+            border-color: #90d5a0;
+        }
+
+        .level-btn.medium {
+            background: linear-gradient(135deg, #c9a877 0%, #b89968 100%);
+            border-color: #d4b896;
+        }
+
+        .level-btn.hard {
+            background: linear-gradient(135deg, #d9a8a8 0%, #c99898 100%);
+            border-color: #e0b8b8;
+        }
+
+        .level-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .level-name {
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 3px;
+        }
+
+        .level-detail {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* ===== 游戏屏幕 ===== */
+        #gameScreen {
+            display: none;
+        }
+
+        .game-header {
+            margin-bottom: 25px;
+        }
+
+        .difficulty-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            background: rgba(201, 168, 119, 0.15);
+            color: #6b4423;
+        }
+
+        .difficulty-badge.easy {
+            background: rgba(168, 213, 186, 0.2);
+            color: #5a8b6f;
+        }
+
+        .difficulty-badge.hard {
+            background: rgba(217, 168, 168, 0.2);
+            color: #8b5a5a;
+        }
+
+        h1 {
+            color: #6b4423;
+            margin: 12px 0 15px;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #a0826d;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .progress-container {
+            margin: 15px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(201, 168, 119, 0.08) 0%, rgba(217, 168, 168, 0.08) 100%);
+            border-radius: 12px;
+            border: 1px solid rgba(201, 168, 119, 0.2);
+        }
+
+        .progress-label {
+            color: #6b4423;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(201, 168, 119, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #c9a877, #d9a8a8);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .attempts-display {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .heart {
+            font-size: 20px;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .heart.used {
+            opacity: 0.3;
+        }
+
+        /* 输入框 */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        #numInput {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #d4c4b0;
+            border-radius: 15px;
+            font-size: 18px;
+            font-family: 'Fredoka', sans-serif;
+            outline: none;
+            background: #fdfbf9;
+            color: #6b4423;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        #numInput:focus {
+            border-color: #c9a877;
+            background: #fffcf9;
+            box-shadow: 0 0 0 3px rgba(201, 168, 119, 0.1);
+            transform: scale(1.02);
+        }
+
+        #numInput::placeholder {
+            color: #c9a877;
+        }
+
+        /* 按钮 */
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Fredoka', sans-serif;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+            color: white;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        button:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        #guessBtn {
+            background: linear-gradient(135deg, #c9a877 0%, #b89968 100%);
+            box-shadow: 0 4px 15px rgba(201, 168, 119, 0.3);
+        }
+
+        #guessBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(201, 168, 119, 0.4);
+        }
+
+        #backBtn {
+            background: linear-gradient(135deg, #a0a0a0 0%, #909090 100%);
+            box-shadow: 0 4px 15px rgba(160, 160, 160, 0.3);
+        }
+
+        #backBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(160, 160, 160, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 结果显示 */
+        .result-container {
+            margin: 20px 0;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result {
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.6;
+            animation: fadeInScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .result.correct {
+            color: #6b4423;
+            font-size: 20px;
+        }
+
+        .result.feedback {
+            color: #a0826d;
+        }
+
+        .result.error {
+            color: #c99898;
+        }
+
+        .result.gameover {
+            color: #8b5a5a;
+            font-size: 19px;
+        }
+
+        /* 烟花和庆祝效果 */
+        .confetti {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .star-fall {
+            position: fixed;
+            pointer-events: none;
+            z-index: 999;
+            font-size: 24px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .level-title {
+                font-size: 1.6rem;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 10px 16px;
+            }
+
+            .sprite {
+                font-size: 60px;
+            }
+
+            .sprite-container {
+                height: 80px;
+                margin-bottom: 20px;
+            }
+
+            .level-btn {
+                padding: 14px;
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration">
+        <div class="leaf">🍃</div>
+        <div class="leaf">🍂</div>
+        <div class="leaf">🍃</div>
+        <div class="leaf">🌿</div>
+        <div class="leaf">🍂</div>
+    </div>
+
+    <div class="wrapper">
+        <div class="container">
+            <!-- 关卡选择屏幕 -->
+            <div id="levelSelect">
+                <div class="sprite-container">
+                    <div class="sprite">✨</div>
+                </div>
+                <h2 class="level-title">森林精灵的冒险</h2>
+                <p class="level-description">选择你想要挑战的难度吧～<br>每个难度都有不同的精灵在等你呢！</p>
+                
+                <div class="levels-grid">
+                    <button class="level-btn easy" onclick="startGame('easy')">
+                        <div class="level-info">
+                            <div class="level-name">🌱 迷你精灵</div>
+                            <div class="level-detail">范围：1-50 | 机会：8次</div>
+                        </div>
+                        <div>→</div>
+                    </button>
+                    <button class="level-btn medium" onclick="startGame('medium')">
+                        <div class="level-info">
+                            <div class="level-name">🌿 普通精灵</div>
+                            <div class="level-detail">范围：1-100 | 机会：10次</div>
+                        </div>
+                        <div>→</div>
+                    </button>
+                    <button class="level-btn hard" onclick="startGame('hard')">
+                        <div class="level-info">
+                            <div class="level-name">🌳 魔法精灵</div>
+                            <div class="level-detail">范围：1-200 | 机会：12次</div>
+                        </div>
+                        <div>→</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 游戏屏幕 -->
+            <div id="gameScreen">
+                <div class="game-header">
+                    <div class="difficulty-badge" id="difficultyBadge"></div>
+                    <div class="sprite-container">
+                        <div class="sprite" id="sprite">✨</div>
+                    </div>
+                    <h1 id="gameTitle">森林精灵的数字</h1>
+                    <p class="subtitle" id="gameSubtitle"></p>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-label" id="attemptsLabel">还有机会呦～</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="attempts-display" id="attemptsDisplay"></div>
+                </div>
+
+                <div class="input-group">
+                    <input type="number" id="numInput" placeholder="输入你猜的数字" min="1">
+                </div>
+
+                <div class="button-group">
+                    <button id="backBtn" onclick="backToSelect()">返回选择</button>
+                    <button id="guessBtn" onclick="guessNumber()">提交答案</button>
+                </div>
+
+                <div class="result-container">
+                    <div class="result" id="result"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 游戏配置 ==========
+        const levelConfigs = {
+            easy: {
+                emoji: '🌱',
+                name: '迷你精灵',
+                range: { min: 1, max: 50 },
+                attempts: 8,
+                color: '#a8d5ba'
+            },
+            medium: {
+                emoji: '🌿',
+                name: '普通精灵',
+                range: { min: 1, max: 100 },
+                attempts: 10,
+                color: '#c9a877'
+            },
+            hard: {
+                emoji: '🌳',
+                name: '魔法精灵',
+                range: { min: 1, max: 200 },
+                attempts: 12,
+                color: '#d9a8a8'
+            }
+        };
+
+        const dialogues = {
+            easy: {
+                thinking: ["迷你精灵正在想呢～", "嘿嘿，小小的我想到了～"],
+                tooBig: ["哎呀，太大了啦～", "温柔一点呀～"],
+                tooSmall: ["小一点、小一点～", "噢噢，再往上走～"],
+                correct: ["呀！你猜对啦！🎉", "我的小秘密被你发现了～✨"],
+                gameover: ["呜呜，没关系啦～", "下次再来吧～"]
+            },
+            medium: {
+                thinking: ["普通精灵在想一个数字～", "我的数字在森林里藏着～"],
+                tooBig: ["猜大了，再小点～", "离我更近一点～"],
+                tooSmall: ["猜小了，往上走～", "再大胆一点～"],
+                correct: ["哇哦，你猜对了！🎉", "天哪，你太厉害了～✨"],
+                gameover: ["哎呀，没有机会了～", "等等，重新选一个难度吧～"]
+            },
+            hard: {
+                thinking: ["魔法精灵在想一个隐秘的数字～", "这个数字被魔法保护着～"],
+                tooBig: ["咦，太过头了～", "神秘的数字在下方呢～"],
+                tooSmall: ["嗯嗯，继续猜～", "答案在更高的地方～"],
+                correct: ["太棒了！你破解了魔法！🎉", "你真的找到了！✨✨"],
+                gameover: ["魔法太强了呢～", "要不要重新接受挑战？"]
+            }
+        };
+
+        // ========== 全局变量 ==========
+        let currentLevel = null;
+        let randomNum = null;
+        let guessCount = 0;
+        let maxAttempts = 0;
+        let gameWon = false;
+        let gameLost = false;
+
+        const levelSelect = document.getElementById('levelSelect');
+        const gameScreen = document.getElementById('gameScreen');
+        const numInput = document.getElementById('numInput');
+        const guessBtn = document.getElementById('guessBtn');
+        const result = document.getElementById('result');
+        const sprite = document.getElementById('sprite');
+        const difficultyBadge = document.getElementById('difficultyBadge');
+        const gameTitle = document.getElementById('gameTitle');
+        const gameSubtitle = document.getElementById('gameSubtitle');
+        const progressFill = document.getElementById('progressFill');
+        const attemptsLabel = document.getElementById('attemptsLabel');
+        const attemptsDisplay = document.getElementById('attemptsDisplay');
+
+        // ========== 开始游戏 ==========
+        function startGame(level) {
+            currentLevel = level;
+            const config = levelConfigs[level];
+            maxAttempts = config.attempts;
+            guessCount = 0;
+            gameWon = false;
+            gameLost = false;
+
+            // 生成随机数（确保一局游戏只生成一次）
+            randomNum = Math.floor(Math.random() * (config.range.max - config.range.min + 1)) + config.range.min;
+            console.log('🎮 本局游戏的数字是：' + randomNum);
+
+            // 更新UI
+            levelSelect.style.display = 'none';
+            gameScreen.style.display = 'block';
+
+            difficultyBadge.textContent = config.emoji + ' ' + config.name;
+            difficultyBadge.className = 'difficulty-badge ' + level;
+            gameTitle.textContent = config.name + '的数字';
+            gameSubtitle.textContent = `我想了一个${config.range.min}到${config.range.max}的数字～`;
+            
+            sprite.textContent = config.emoji;
+            sprite.style.animation = 'sprite-bounce 2s infinite ease-in-out';
+            
+            result.textContent = getRandomDialogue(level, 'thinking');
+            result.className = 'result feedback';
+
+            numInput.value = '';
+            numInput.focus();
+            numInput.disabled = false;
+            guessBtn.disabled = false;
+            numInput.max = config.range.max;
+
+            updateAttempts();
+        }
+
+        // ========== 返回选择 ==========
+        function backToSelect() {
+            levelSelect.style.display = 'flex';
+            gameScreen.style.display = 'none';
+            result.textContent = '';
+        }
+
+        // ========== 获取对话 ==========
+        function getRandomDialogue(level, type) {
+            const dialogueList = dialogues[level][type];
+            return dialogueList[Math.floor(Math.random() * dialogueList.length)];
+        }
+
+        // ========== 更新次数显示 ==========
+        function updateAttempts() {
+            const config = levelConfigs[currentLevel];
+            const remaining = maxAttempts - guessCount;
+            const percentage = (guessCount / maxAttempts) * 100;
+
+            progressFill.style.width = percentage + '%';
+            attemptsLabel.textContent = `还有${remaining}次机会呦～`;
+
+            let heartsHTML = '';
+            for (let i = 0; i < maxAttempts; i++) {
+                if (i < guessCount) {
+                    heartsHTML += '<div class="heart used">💛</div>';
+                } else {
+                    heartsHTML += '<div class="heart">💛</div>';
+                }
+            }
+            attemptsDisplay.innerHTML = heartsHTML;
+        }
+
+        // ========== 猜数字 ==========
+        function guessNumber() {
+            if (gameWon || gameLost) return;
+
+            const config = levelConfigs[currentLevel];
+            const userNum = parseInt(numInput.value);
+
+            console.log('用户输入: ' + userNum + ', 正确答案: ' + randomNum);
+
+            if (isNaN(userNum) || userNum < config.range.min || userNum > config.range.max) {
+                result.textContent = `请输入${config.range.min}-${config.range.max}之间的数字呀～`;
+                result.className = 'result error';
+                numInput.focus();
+                return;
+            }
+
+            guessCount++;
+            updateAttempts();
+
+            if (userNum > randomNum) {
+                console.log('判断：猜大了（' + userNum + ' > ' + randomNum + '）');
+                result.textContent = getRandomDialogue(currentLevel, 'tooBig');
+                result.className = 'result feedback';
+                sprite.style.animation = 'none';
+                setTimeout(() => {
+                    sprite.textContent = levelConfigs[currentLevel].emoji;
+                    sprite.style.animation = 'sprite-bounce 2s infinite ease-in-out';
+                }, 50);
+            } else if (userNum < randomNum) {
+                console.log('判断：猜小了（' + userNum + ' < ' + randomNum + '）');
+                result.textContent = getRandomDialogue(currentLevel, 'tooSmall');
+                result.className = 'result feedback';
+                sprite.style.animation = 'none';
+                setTimeout(() => {
+                    sprite.textContent = levelConfigs[currentLevel].emoji;
+                    sprite.style.animation = 'sprite-bounce 2s infinite ease-in-out';
+                }, 50);
+            } else {
+                console.log('判断：猜对了！（' + userNum + ' == ' + randomNum + '）');
+                gameWon = true;
+                const message = getRandomDialogue(currentLevel, 'correct');
+                result.textContent = `${message}\n一共猜了${guessCount}次～`;
+                result.className = 'result correct';
+                
+                sprite.textContent = '🎉';
+                numInput.disabled = true;
+                guessBtn.disabled = true;
+                
+                createConfetti();
+                createStarFall();
+                playWinSound();
+            }
+
+            // 检查游戏结束
+            if (guessCount >= maxAttempts && !gameWon) {
+                gameLost = true;
+                const message = getRandomDialogue(currentLevel, 'gameover');
+                result.textContent = `${message}\n数字是${randomNum}呢～\n点击"返回选择"换个难度试试吧～`;
+                result.className = 'result gameover';
+                
+                sprite.textContent = '😔';
+                numInput.disabled = true;
+                guessBtn.disabled = true;
+            }
+
+            numInput.value = '';
+            if (!gameWon && !gameLost) numInput.focus();
+        }
+
+        // ========== 烟花效果 ==========
+        function createConfetti() {
+            const colors = ['🎉', '✨', '🌟', '💫', '🎊'];
+            const confettiCount = 30;
+
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.textContent = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * window.innerWidth + 'px';
+                confetti.style.top = '-10px';
+                confetti.style.fontSize = (Math.random() * 20 + 20) + 'px';
+                confetti.style.opacity = '1';
+                
+                document.body.appendChild(confetti);
+
+                const duration = Math.random() * 2 + 2.5;
+                const keyframes = `
+                    @keyframes fall${i} {
+                        0% {
+                            transform: translateY(0) translateX(0) rotate(0deg);
+                            opacity: 1;
+                        }
+                        100% {
+                            transform: translateY(${window.innerHeight + 100}px) translateX(${Math.random() * 200 - 100}px) rotate(${Math.random() * 360}deg);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                
+                const style = document.createElement('style');
+                style.textContent = keyframes + `
+                    .confetti { animation: fall${i} ${duration}s linear forwards; }
+                `;
+                document.head.appendChild(style);
+
+                setTimeout(() => confetti.remove(), duration * 1000);
+            }
+        }
+
+        // ========== 星星掉落效果 ==========
+        function createStarFall() {
+            const stars = ['⭐', '✨', '🌟'];
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const star = document.createElement('div');
+                    star.className = 'star-fall';
+                    star.textContent = stars[Math.floor(Math.random() * stars.length)];
+                    star.style.left = Math.random() * window.innerWidth + 'px';
+                    star.style.top = '-30px';
+                    
+                    document.body.appendChild(star);
+
+                    const duration = Math.random() * 2 + 2;
+                    const keyframes = `
+                        @keyframes starFall${i} {
+                            0% {
+                                transform: translateY(0) scale(1) rotate(0deg);
+                                opacity: 1;
+                            }
+                            100% {
+                                transform: translateY(${window.innerHeight + 100}px) scale(0.3) rotate(360deg);
+                                opacity: 0;
+                            }
+                        }
+                    `;
+                    
+                    const style = document.createElement('style');
+                    style.textContent = keyframes + `
+                        .star-fall { animation: starFall${i} ${duration}s ease-in forwards; }
+                    `;
+                    document.head.appendChild(style);
+
+                    setTimeout(() => star.remove(), duration * 1000);
+                }, i * 50);
+            }
+        }
+
+        // ========== 胜利音效 ==========
+        function playWinSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioContext.currentTime;
+                
+                const notes = [800, 1000, 1200];
+                notes.forEach((freq, idx) => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.15);
+                    gain.gain.setValueAtTime(0.3, now + idx * 0.15);
+                    gain.gain.setValueAtTime(0, now + idx * 0.15 + 0.2);
+                    
+                    osc.start(now + idx * 0.15);
+                    osc.stop(now + idx * 0.15 + 0.2);
+                });
+            } catch (e) {
+                // 静默处理
+            }
+        }
+
+        // 回车提交
+        numInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') guessNumber();
+        });
+    </script>
+</body>
+</html>
