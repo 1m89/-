@@ -555,43 +555,82 @@
                 name: '迷你精灵',
                 range: { min: 1, max: 50 },
                 attempts: 8,
-                color: '#a8d5ba'
+                color: '#a8d5ba',
+                // 差值分档（适配1-50范围）
+                hintThreshold: {
+                    small: 5,  // 差值<5：一点点
+                    medium: 10 // 差值5-10：一些；>10：很多
+                }
             },
             medium: {
                 emoji: '🌿',
                 name: '普通精灵',
                 range: { min: 1, max: 100 },
                 attempts: 10,
-                color: '#c9a877'
+                color: '#c9a877',
+                // 差值分档（适配1-100范围）
+                hintThreshold: {
+                    small: 10, // 差值<10：一点点
+                    medium: 20 // 差值10-20：一些；>20：很多
+                }
             },
             hard: {
                 emoji: '🌳',
                 name: '魔法精灵',
                 range: { min: 1, max: 200 },
                 attempts: 12,
-                color: '#d9a8a8'
+                color: '#d9a8a8',
+                // 差值分档（适配1-200范围）
+                hintThreshold: {
+                    small: 15, // 差值<15：一点点
+                    medium: 30 // 差值15-30：一些；>30：很多
+                }
             }
         };
 
         const dialogues = {
             easy: {
                 thinking: ["迷你精灵正在想呢～", "嘿嘿，小小的我想到了～"],
-                tooBig: ["哎呀，太大了啦～", "温柔一点呀～"],
-                tooSmall: ["小一点、小一点～", "噢噢，再往上走～"],
+                tooBig: {
+                    small: ["哎呀，就大一点点啦～", "就差一丢丢哦～"],
+                    medium: ["大了一些哦～温柔一点～", "稍微大了点，再小些～"],
+                    big: ["太大了啦～要小很多哦～", "超超超大一截啦～"]
+                },
+                tooSmall: {
+                    small: ["就小一点点啦～", "差一点点就到啦～"],
+                    medium: ["小了一些哦～再往上走～", "稍微小了点，大胆点～"],
+                    big: ["太小了啦～要大很多哦～", "离答案还差一大截呢～"]
+                },
                 correct: ["呀！你猜对啦！🎉", "我的小秘密被你发现了～✨"],
                 gameover: ["呜呜，没关系啦～", "下次再来吧～"]
             },
             medium: {
                 thinking: ["普通精灵在想一个数字～", "我的数字在森林里藏着～"],
-                tooBig: ["猜大了，再小点～", "离我更近一点～"],
-                tooSmall: ["猜小了，往上走～", "再大胆一点～"],
+                tooBig: {
+                    small: ["就大一点点哦～再小点～", "差一丢丢就对啦～"],
+                    medium: ["大了一些哦～离我更近点～", "稍微大了点，再往下～"],
+                    big: ["猜大太多啦～要小不少哦～", "答案比这个小很多呢～"]
+                },
+                tooSmall: {
+                    small: ["就小一点点哦～往上走～", "差一丢丢就找到啦～"],
+                    medium: ["小了一些哦～再大胆点～", "稍微小了点，再往上～"],
+                    big: ["猜小太多啦～要大不少哦～", "答案比这个大很多呢～"]
+                },
                 correct: ["哇哦，你猜对了！🎉", "天哪，你太厉害了～✨"],
                 gameover: ["哎呀，没有机会了～", "等等，重新选一个难度吧～"]
             },
             hard: {
                 thinking: ["魔法精灵在想一个隐秘的数字～", "这个数字被魔法保护着～"],
-                tooBig: ["咦，太过头了～", "神秘的数字在下方呢～"],
-                tooSmall: ["嗯嗯，继续猜～", "答案在更高的地方～"],
+                tooBig: {
+                    small: ["就大一点点哦～神秘数字在下方～", "差一丢丢就破解魔法啦～"],
+                    medium: ["大了一些哦～再往下找找～", "稍微大了点，魔法数字更小～"],
+                    big: ["猜大太多啦～要小很多哦～", "魔法数字比这个小超多呢～"]
+                },
+                tooSmall: {
+                    small: ["就小一点点哦～继续往上猜～", "差一丢丢就找到魔法数字啦～"],
+                    medium: ["小了一些哦～答案在更高处～", "稍微小了点，再大胆往上～"],
+                    big: ["猜小太多啦～要大很多哦～", "魔法数字比这个大超多呢～"]
+                },
                 correct: ["太棒了！你破解了魔法！🎉", "你真的找到了！✨✨"],
                 gameover: ["魔法太强了呢～", "要不要重新接受挑战？"]
             }
@@ -617,6 +656,28 @@
         const progressFill = document.getElementById('progressFill');
         const attemptsLabel = document.getElementById('attemptsLabel');
         const attemptsDisplay = document.getElementById('attemptsDisplay');
+
+        // ========== 获取精准提示（核心修复） ==========
+        function getSpecificHint(isTooBig, userNum) {
+            const config = levelConfigs[currentLevel];
+            const diff = Math.abs(userNum - randomNum); // 计算差值
+            const threshold = config.hintThreshold;
+            
+            // 确定提示类型（small/medium/big）
+            let hintType;
+            if (diff < threshold.small) {
+                hintType = 'small';
+            } else if (diff < threshold.medium) {
+                hintType = 'medium';
+            } else {
+                hintType = 'big';
+            }
+
+            // 根据大小/难度/提示类型获取随机提示
+            const dialogueType = isTooBig ? 'tooBig' : 'tooSmall';
+            const hintList = dialogues[currentLevel][dialogueType][hintType];
+            return hintList[Math.floor(Math.random() * hintList.length)];
+        }
 
         // ========== 开始游戏 ==========
         function startGame(level) {
@@ -662,7 +723,7 @@
             result.textContent = '';
         }
 
-        // ========== 获取对话 ==========
+        // ========== 获取基础对话 ==========
         function getRandomDialogue(level, type) {
             const dialogueList = dialogues[level][type];
             return dialogueList[Math.floor(Math.random() * dialogueList.length)];
@@ -688,7 +749,7 @@
             attemptsDisplay.innerHTML = heartsHTML;
         }
 
-        // ========== 猜数字 ==========
+        // ========== 猜数字（核心修复：精准提示） ==========
         function guessNumber() {
             if (gameWon || gameLost) return;
 
@@ -708,8 +769,9 @@
             updateAttempts();
 
             if (userNum > randomNum) {
-                console.log('判断：猜大了（' + userNum + ' > ' + randomNum + '）');
-                result.textContent = getRandomDialogue(currentLevel, 'tooBig');
+                console.log('判断：猜大了（' + userNum + ' > ' + randomNum + '），差值：' + (userNum - randomNum));
+                // 获取精准提示（猜大了）
+                result.textContent = getSpecificHint(true, userNum);
                 result.className = 'result feedback';
                 sprite.style.animation = 'none';
                 setTimeout(() => {
@@ -717,8 +779,9 @@
                     sprite.style.animation = 'sprite-bounce 2s infinite ease-in-out';
                 }, 50);
             } else if (userNum < randomNum) {
-                console.log('判断：猜小了（' + userNum + ' < ' + randomNum + '）');
-                result.textContent = getRandomDialogue(currentLevel, 'tooSmall');
+                console.log('判断：猜小了（' + userNum + ' < ' + randomNum + '），差值：' + (randomNum - userNum));
+                // 获取精准提示（猜小了）
+                result.textContent = getSpecificHint(false, userNum);
                 result.className = 'result feedback';
                 sprite.style.animation = 'none';
                 setTimeout(() => {
